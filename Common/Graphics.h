@@ -15,7 +15,6 @@ namespace HalideExamples {
 	void InitializeGraphics();
 	void TerminateGraphics();
 	void DisplayImage(Halide::Image<float>& image);
-	void DisplayImage(Halide::Image<float>& image, float min, float max);
 
 }
 

@@ -33,7 +33,7 @@ void GetImageMinMax(Halide::Image<float>& image, float& min, float& max) {
 
 Func InitializeImageConverter() {
 	// First get min and max of the image
-	RDom r(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT);
+	RDom r(0, image.width(), 0, image.height());
 
 	// Now rescale the image to the range 0..255 and project the value to a RGBA integer value
 	Func imgmin;
@@ -114,24 +114,6 @@ void DisplayImage(Halide::Image<float>& image) {
 
 	Buffer output(type_of<uint32_t>(), &pixbuf);
 	imageConverter.realize(output);
-
-	SDL_UnlockSurface(mainSurface);
-	SDL_BlitSurface(mainSurface, 0, SDL_GetWindowSurface(mainWindow), 0);
-	SDL_UpdateWindowSurface(mainWindow);
-}
-
-void DisplayImage(Halide::Image<float>& image, float min, float max) {
-	::image.set(image);
-	minvalue.set(min);
-	maxvalue.set(max);
-
-	SDL_LockSurface(mainSurface);
-	uint8_t* pixels = reinterpret_cast<uint8_t*>(mainSurface->pixels);
-
-	Buffer output(type_of<uint32_t>(), SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, pixels);
-	output.raw_buffer()->stride[0] = 1;
-	output.raw_buffer()->stride[1] = mainSurface->pitch / 4;
-	imageConverterMinMaxProvided.realize(output);
 
 	SDL_UnlockSurface(mainSurface);
 	SDL_BlitSurface(mainSurface, 0, SDL_GetWindowSurface(mainWindow), 0);

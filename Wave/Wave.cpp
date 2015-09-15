@@ -76,8 +76,8 @@ void RunDemo(int width, int height) {
 
 	// More random drops
 	for (int i = 0; i < 1000; ++i) {
-		int x = std::rand() % SCREEN_WIDTH;
-		int y = std::rand() % SCREEN_HEIGHT;
+		int x = std::rand() % width;
+		int y = std::rand() % height;
 		curr(x, y) = 1.0f;
 	}
 

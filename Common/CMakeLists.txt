@@ -23,6 +23,7 @@ target_link_libraries(Graphics
 add_library(Common STATIC
 	ImageConverter.cpp
 	ImageConverter.h
+	Vec.h
 )
 
 target_include_directories(Common

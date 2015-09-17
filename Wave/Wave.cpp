@@ -2,6 +2,7 @@
 
 #include <Halide.h>
 #include <Graphics.h>
+#include <Vec.h>
 
 using namespace Halide;
 
@@ -62,6 +63,10 @@ void RunDemo(int width, int height) {
 	Image<float> next(buff3);
 	Image<float> scale(width, height);
 
+	// For shaded output
+	Buffer shadebuff(type_of<float>(), width, height);
+	Image<float> shaded(shadebuff);
+
 	// Initialize the wave values
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
@@ -83,11 +88,35 @@ void RunDemo(int width, int height) {
 
 	Func wv = WavePropagator(Image<float>(buff1), Image<float>(buff2), scale);
 
+	Param<float> lx, ly, lz, ex, ey, ez;
+	lx.set(-15000.0f);
+	ly.set(-5000.0f);
+	lz.set(20000.0f);
+	ex.set(640.0f);
+	ey.set(360.0f);
+	ez.set(1000.0f);
+	Func shader = InitializeSpecularShader(curr, lx, ly, lz, ex, ey, ez);
+
 	unsigned int nframes = 0;
-	while (true) {
-		DisplayImage(curr);
+	while (nframes < 10000) {
+		buffer_t* rawbuf = shadebuff.raw_buffer();
+		rawbuf->extent[0] -= 2;
+		rawbuf->extent[1] -= 2;
+		rawbuf->min[0] = 1;
+		rawbuf->min[1] = 1;
+		rawbuf->host += rawbuf->elem_size * (rawbuf->stride[0] + rawbuf->stride[1]);
+		shader.realize(shadebuff);
+		rawbuf->extent[0] += 2;
+		rawbuf->extent[1] += 2;
+		rawbuf->min[0] = 0;
+		rawbuf->min[1] = 0;
+		rawbuf->host -= rawbuf->elem_size * (rawbuf->stride[0] + rawbuf->stride[1]);
+		DisplayImage(shaded, 0.0f, 1.0f);
+
+
+		//DisplayImage(curr);
 		// Set the min and extent of the output buffer so we compute only the valid region
-		buffer_t* rawbuf = buff3.raw_buffer();
+		rawbuf = buff3.raw_buffer();
 		rawbuf->extent[0] -= 2;
 		rawbuf->extent[1] -= 2;
 		rawbuf->min[0] = 1;

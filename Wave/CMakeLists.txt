@@ -9,3 +9,7 @@ target_link_libraries(Wave
 		Graphics
 		${PROFILING_LINK_FLAGS}
 )
+
+install(TARGETS Wave
+	RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/build-dir/bin
+)

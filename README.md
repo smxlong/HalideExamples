@@ -21,7 +21,7 @@ Build script:
 
 For the first build, you must specify the path to your Halide installation:
 
-	$ ./build.sh -DHALIDE_ROOT=&lt;path to Halide&gt;
+	$ ./build.sh -DHALIDE_ROOT=<path to Halide>
 
 The example programs will be built and installed into the build-dir/bin directory.
 

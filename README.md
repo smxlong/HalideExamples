@@ -19,13 +19,15 @@ Prerequisites:
 
 Build script:
 
-$ ./build.sh -DHALIDE_ROOT=<path to Halide>
+For the first build, you must specify the path to your Halide installation:
+
+	$ ./build.sh -DHALIDE_ROOT=&lt;path to Halide&gt;
 
 The example programs will be built and installed into the build-dir/bin directory.
 
-Once built for the first time, you can quickly rebuild by running:
+Subsequent builds can be done by invoking the build script with no parameters:
 
-make -C build-dir/cmake-build install
+	$ ./build.sh
 
 ## Examples ##
 

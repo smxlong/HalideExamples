@@ -24,6 +24,7 @@ add_library(Common STATIC
 	ImageConverter.cpp
 	ImageConverter.h
 	Vec.h
+	Random.h
 )
 
 target_include_directories(Common

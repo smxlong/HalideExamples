@@ -30,4 +30,6 @@ target_link_libraries(HalideLib INTERFACE -L${HALIDE_LIBRARY_DIR} ${HALIDE_LIBRA
 
 add_subdirectory(Common)
 add_subdirectory(Wave)
+add_subdirectory(ParticleFountain)
+add_subdirectory(Grav)
 add_subdirectory(Test)

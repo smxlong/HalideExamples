@@ -23,6 +23,10 @@ public:
 		return Halide::sqrt(x * x + y * y + z * z);
 	}
 
+	Halide::Expr magnitudeSquared() const {
+		return x * x + y * y + z * z;
+	}
+
 	Halide::Expr x;
 	Halide::Expr y;
 	Halide::Expr z;

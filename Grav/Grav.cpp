@@ -99,12 +99,20 @@ void RunDemo(int width, int height) {
 			vy = Random(-1.0f, 1.0f);
 		}
 		
-		oldparticles(i, 3) = TIMESCALE * 0.25f * vx;
-		oldparticles(i, 4) = TIMESCALE * 0.25f * vy;
-		oldparticles(i, 5) = 0.0f;
-		oldparticles(i, 6) = Random(0.1f, 10.0f);
+		if (Random(0.0f, 1.0f) < 0.05f) {
+			oldparticles(i, 3) = TIMESCALE * 0.025f * vx;
+			oldparticles(i, 4) = TIMESCALE * 0.025f * vy;
+			oldparticles(i, 5) = 0.0f;
+			oldparticles(i, 6) = Random(100.0f, 1000.0f);
+		} else {
+			oldparticles(i, 3) = TIMESCALE * 0.25f * vx;
+			oldparticles(i, 4) = TIMESCALE * 0.25f * vy;
+			oldparticles(i, 5) = 0.0f;
+			oldparticles(i, 6) = Random(0.1f, 1.0f);
+		}
 	}
 	// sun in the middle
+#if 0
 	oldparticles(0, 0) = width * 0.5f;
 	oldparticles(0, 1) = height * 0.5f;
 	oldparticles(0, 2) = 0.0f;
@@ -112,6 +120,7 @@ void RunDemo(int width, int height) {
 	oldparticles(0, 4) = 0.0f;
 	oldparticles(0, 5) = 0.0f;
 	oldparticles(0, 6) = 1000.0f;
+#endif
 	
 	// Main loop
 	

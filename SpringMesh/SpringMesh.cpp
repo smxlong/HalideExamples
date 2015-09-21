@@ -6,10 +6,11 @@ using namespace Halide;
 
 namespace HalideExamples {
 
-const int MESH_WIDTH = 32;
-const int MESH_HEIGHT = 32;
-const float SPRING_REST_LENGTH = 2.83464566929f;
+const int MESH_WIDTH = 64;
+const int MESH_HEIGHT = 64;
+const float SPRING_REST_LENGTH = 2.83464566929f / 2;
 const float SPRING_FORCE = 0.02f;
+const float GRAVITY = 0.002f;
 const float FADE = 0.977f;
 
 Vec SpringForce(const Vec& r0, const Vec& r1) {
@@ -34,9 +35,9 @@ Func SpringMesh(INPUT input) {
 	Vec rd(input(i.x, i.y + 1, 0), input(i.x, i.y + 1, 1), 0.0f);
 	Vec f = SpringForce(r0, rl) + SpringForce(r0, rr) + SpringForce(r0, ru) + SpringForce(r0, rd);
 	output(i.x, i.y, 0) = input(i.x, i.y, 0) + input(i.x, i.y, 2) + f.x;
-	output(i.x, i.y, 1) = input(i.x, i.y, 1) + input(i.x, i.y, 3) + f.y;
+	output(i.x, i.y, 1) = input(i.x, i.y, 1) + input(i.x, i.y, 3) + f.y + GRAVITY;
 	output(i.x, i.y, 2) = input(i.x, i.y, 2) + f.x;
-	output(i.x, i.y, 3) = input(i.x, i.y, 3) + f.y;
+	output(i.x, i.y, 3) = input(i.x, i.y, 3) + f.y + GRAVITY;
 	
 	Var xo, yo, xi, yi;
 	output.tile(x, y, xo, yo, xi, yi, 32, 8).vectorize(xi).unroll(yi);
@@ -82,8 +83,8 @@ void RunDemo(int width, int height) {
 	
 	for (int y = 0; y < MESH_HEIGHT; ++y) {
 		for (int x = 0; x < MESH_WIDTH; ++x) {
-			oldparticles(x, y, 0) = left + stepx * x + Random(-0.2f, 0.2f);
-			oldparticles(x, y, 1) = top + stepy * y + Random(-0.2f, 0.2f);
+			oldparticles(x, y, 0) = left + stepx * x;// + Random(-3.2f, 3.2f);
+			oldparticles(x, y, 1) = top + stepy * y;// + Random(-3.2f, 3.2f);
 			oldparticles(x, y, 2) = 0.0f;//Random(-0.05f, 0.05f);
 			oldparticles(x, y, 3) = 0.0f;//Random(-0.05f, 0.05f);
 		}
@@ -97,7 +98,7 @@ void RunDemo(int width, int height) {
 	float period = 70.0f;
 	while (true) {
 		for (int x = 1; x < MESH_WIDTH - 1; ++x) {
-			oldparticles(x, 1, 1) = top + stepy + 0.4f * stepy * std::cos(2 * M_PI * nframe / period);
+			//oldparticles(x, 1, 1) = top + stepy + 0.4f * stepy * std::cos(2 * M_PI * nframe / period);
 		}
 		printf("%d\n", nframe++);
 		renderer.realize(image);

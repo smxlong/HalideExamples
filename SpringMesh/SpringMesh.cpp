@@ -8,10 +8,13 @@ namespace HalideExamples {
 
 const int MESH_WIDTH = 64;
 const int MESH_HEIGHT = 64;
-const float SPRING_REST_LENGTH = 2.83464566929f / 2;
-const float SPRING_FORCE = 0.02f;
-const float GRAVITY = 0.002f;
+const float SPRING_REST_LENGTH = 5.714286;
+const float SPRING_FORCE = 0.3f;
+const float GRAVITY = 0.0001f;
+//const float GRAVITY = 0.0f;
 const float FADE = 0.977f;
+const float ROOT2 = 1.4142135623f;
+const float DEGREES_TO_RADS = 0.0174532925199f;
 
 Vec SpringForce(const Vec& r0, const Vec& r1) {
 	Vec dr = r1 - r0;
@@ -20,24 +23,38 @@ Vec SpringForce(const Vec& r0, const Vec& r1) {
 	return f * dr / len;
 }
 
+template <typename INPUT, typename COORD>
+Vec SpringForce(INPUT& input, COORD& x, COORD& y, Expr dx, Expr dy, float scale=1.0f) {
+	Vec r0(input(x, y, 0), input(x, y, 1), 0.0f);
+	Expr x1 = clamp(x + dx, 0, input.width() - 1);
+	Expr y1 = clamp(y + dy, 0, input.height() - 1);
+	Vec r1(input(x1, y1, 0), input(x1, y1, 1), 0.0f);
+	Vec dr = r1 - r0;
+	Expr len = dr.magnitude();
+	Vec f = (len - scale * SPRING_REST_LENGTH) * SPRING_FORCE * dr / len;
+	Expr outx = select(x1 == x + dx && y1 == y + dy, f.x, 0.0f);
+	Expr outy = select(x1 == x + dx && y1 == y + dy, f.y, 0.0f);
+	return Vec(outx, outy, 0);
+}
+
 template <typename INPUT>
 Func SpringMesh(INPUT input) {
 	Func output;
 	Var x, y, z;
 	output(x, y, z) = input(x, y, z);
-	
-	// Compute force for interior nodes (those with all four neighbors)
-	RDom i(1, input.width() - 2, 1, input.height() - 2);
-	Vec r0(input(i.x, i.y, 0), input(i.x, i.y, 1), 0.0f);
-	Vec rl(input(i.x - 1, i.y, 0), input(i.x - 1, i.y, 1), 0.0f);
-	Vec rr(input(i.x + 1, i.y, 0), input(i.x + 1, i.y, 1), 0.0f);
-	Vec ru(input(i.x, i.y - 1, 0), input(i.x, i.y - 1, 1), 0.0f);
-	Vec rd(input(i.x, i.y + 1, 0), input(i.x, i.y + 1, 1), 0.0f);
-	Vec f = SpringForce(r0, rl) + SpringForce(r0, rr) + SpringForce(r0, ru) + SpringForce(r0, rd);
-	output(i.x, i.y, 0) = input(i.x, i.y, 0) + input(i.x, i.y, 2) + f.x;
-	output(i.x, i.y, 1) = input(i.x, i.y, 1) + input(i.x, i.y, 3) + f.y + GRAVITY;
-	output(i.x, i.y, 2) = input(i.x, i.y, 2) + f.x;
-	output(i.x, i.y, 3) = input(i.x, i.y, 3) + f.y + GRAVITY;
+
+	Vec f = SpringForce(input, x, y,  0, -1)
+		  + SpringForce(input, x, y, -1,  0)
+		  + SpringForce(input, x, y,  1,  0)
+		  + SpringForce(input, x, y,  0,  1)
+		  + SpringForce(input, x, y, -1, -1, ROOT2)
+		  + SpringForce(input, x, y, -1,  1, ROOT2)
+		  + SpringForce(input, x, y,  1, -1, ROOT2)
+		  + SpringForce(input, x, y,  1,  1, ROOT2);
+	output(x, y, 0) = input(x, y, 0) + input(x, y, 2) + f.x;
+	output(x, y, 1) = input(x, y, 1) + input(x, y, 3) + f.y + GRAVITY;
+	output(x, y, 2) = input(x, y, 2) + f.x;
+	output(x, y, 3) = input(x, y, 3) + f.y + GRAVITY;
 	
 	Var xo, yo, xi, yi;
 	output.tile(x, y, xo, yo, xi, yi, 32, 8).vectorize(xi).unroll(yi);
@@ -79,14 +96,39 @@ void RunDemo(int width, int height) {
 	float stepx = height * 0.5f / (MESH_WIDTH - 1);
 	float top = height * 0.25f;
 	float stepy = height * 0.5f / (MESH_HEIGHT - 1);
-	
+
+	printf("%f\n", stepx);
 	
 	for (int y = 0; y < MESH_HEIGHT; ++y) {
 		for (int x = 0; x < MESH_WIDTH; ++x) {
-			oldparticles(x, y, 0) = left + stepx * x;// + Random(-3.2f, 3.2f);
-			oldparticles(x, y, 1) = top + stepy * y;// + Random(-3.2f, 3.2f);
-			oldparticles(x, y, 2) = 0.0f;//Random(-0.05f, 0.05f);
-			oldparticles(x, y, 3) = 0.0f;//Random(-0.05f, 0.05f);
+			oldparticles(x, y, 0) = left + stepx * x;
+			oldparticles(x, y, 1) = top + stepy * y;
+			oldparticles(x, y, 2) = 0.0f;
+			oldparticles(x, y, 3) = 0.0f;
+		}
+	}
+	
+	// Rotate the particles by 15 degrees
+	const float centerx = SCREEN_WIDTH / 2;
+	const float centery = SCREEN_HEIGHT / 2;
+	for (int y = 0; y < MESH_HEIGHT; ++y) {
+		for (int x = 0; x < MESH_WIDTH; ++x) {
+			float a = std::cos(DEGREES_TO_RADS * 15.0f);
+			float b = std::sin(DEGREES_TO_RADS * 15.0f);
+			// rotate position
+			float oldx = oldparticles(x, y, 0) - centerx;
+			float oldy = oldparticles(x, y, 1) - centery;
+			float newx = a * oldx - b * oldy;
+			float newy = b * oldx + a * oldy;
+			oldparticles(x, y, 0) = newx + centerx;
+			oldparticles(x, y, 1) = newy + centery;
+			// and velocity
+			oldx = oldparticles(x, y, 2);
+			oldy = oldparticles(x, y, 3);
+			newx = a * oldx - b * oldy;
+			newy = b * oldx + a * oldy;
+			oldparticles(x, y, 2) = newx;
+			oldparticles(x, y, 3) = newy;
 		}
 	}
 	
@@ -97,13 +139,21 @@ void RunDemo(int width, int height) {
 	int nframe = 0;
 	float period = 70.0f;
 	while (true) {
-		for (int x = 1; x < MESH_WIDTH - 1; ++x) {
-			//oldparticles(x, 1, 1) = top + stepy + 0.4f * stepy * std::cos(2 * M_PI * nframe / period);
-		}
 		printf("%d\n", nframe++);
 		renderer.realize(image);
-		DisplayImage(image);
+		if (nframe % 10 == 0) {
+			DisplayImage(image);
+		}
 		spring.realize(newparticles);
+		// Let particles bounce off the bottom
+		for (int y = 0; y < MESH_WIDTH; ++y) {
+			for (int x = 0; x < MESH_HEIGHT; ++x) {
+				if (newparticles(x, y, 1) >= height - 1) {
+					newparticles(x, y, 1) = 2 * (height - 1) - newparticles(x, y, 1);
+					newparticles(x, y, 3) = -newparticles(x, y, 3);
+				}
+			}
+		}
 		std::swap(*oldbuff.raw_buffer(), *newbuff.raw_buffer());
 		std::swap(*previmagebuff.raw_buffer(), *imagebuff.raw_buffer());
 	}
